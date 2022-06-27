@@ -1,4 +1,7 @@
 const std = @import("std");
+const Sdk = @import("./SDL.zig/Sdk.zig");
+
+const log = std.debug.print;
 
 pub fn build(b: *std.build.Builder) void {
     // Standard target options allows the person running `zig build` to choose
@@ -7,28 +10,17 @@ pub fn build(b: *std.build.Builder) void {
     // for restricting supported target set are available.
     const target = b.standardTargetOptions(.{});
 
+    const sdk = Sdk.init(b);
     // Standard release options allow the person running `zig build` to select
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
+    //    log("test\n",.{target});
+
     const exe = b.addExecutable("jumpity", "src/main.zig");
     exe.setTarget(target);
+    sdk.link(exe, .dynamic);
     exe.setBuildMode(mode);
+    exe.addPackage(sdk.getWrapperPackage("sdl2"));
     exe.install();
-
-    const run_cmd = exe.run();
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
-
-    const exe_tests = b.addTest("src/main.zig");
-    exe_tests.setTarget(target);
-    exe_tests.setBuildMode(mode);
-
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&exe_tests.step);
 }
